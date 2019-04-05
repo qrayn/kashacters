@@ -18,7 +18,7 @@ Citizen.CreateThread(function()
     while true do
         Citizen.Wait(5)
         
-        if NetworkIsSessionStarted() and not ESX.PlayerLoaded() then
+        if NetworkIsSessionStarted() and not ESX.IsPlayerLoaded() then
             TriggerServerEvent("kashactersS:SetupCharacters")
             TriggerEvent("kashactersC:SetupCharacters")
             
