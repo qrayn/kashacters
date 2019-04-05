@@ -1,31 +1,35 @@
-ESX = nil
+local ESX = nil
+
+local IsChoosing = true
+
 Citizen.CreateThread(function()
     while ESX == nil do
         Citizen.Wait(200)
-        TriggerEvent('esx:getSharedObject', function (obj) ESX = obj end)
-    end
-end)
-Citizen.CreateThread(function()
-    Citizen.Wait(7)
-    if NetworkIsSessionStarted() then
-        Citizen.Wait(100)
-        TriggerServerEvent("kashactersS:SetupCharacters")
-        TriggerEvent("kashactersC:SetupCharacters")
+        
+        TriggerEvent('esx:getSharedObject', function (obj) 
+            ESX = obj 
+        end)
     end
 end)
 
-local IsChoosing = true
-Citizen.CreateThread(function ()
+Citizen.CreateThread(function()
+    Citizen.Wait(100)
+    
     while true do
-        Citizen.Wait(0)
-        if IsChoosing then
-            DisplayHud(false)
-            DisplayRadar(false)
+        Citizen.Wait(5)
+        
+        if NetworkIsSessionStarted() and not ESX.PlayerLoaded() then
+            TriggerServerEvent("kashactersS:SetupCharacters")
+            TriggerEvent("kashactersC:SetupCharacters")
+            
+            return
         end
     end
 end)
+
 local cam = nil
 local cam2 = nil
+
 RegisterNetEvent('kashactersC:SetupCharacters')
 AddEventHandler('kashactersC:SetupCharacters', function()
     DoScreenFadeOut(10)
@@ -44,6 +48,10 @@ AddEventHandler('kashactersC:SetupUI', function(Characters)
     DoScreenFadeIn(500)
     Citizen.Wait(500)
     SetNuiFocus(true, true)
+
+    DisplayHud(false)
+    DisplayRadar(false)
+
     SendNUIMessage({
         action = "openui",
         characters = Characters,
