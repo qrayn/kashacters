@@ -41,44 +41,44 @@ end)
 
 function GetPlayerCharacters(source)
     local identifier = GetIdentifierWithoutSteam(GetPlayerIdentifiers(source)[1])
-    local Chars = MySQLAsyncExecute("SELECT * FROM `users` WHERE identifier LIKE '%"..identifier.."%'")
+    local Chars = MySQLAsyncExecute("SELECT * FROM `users` WHERE identifier LIKE @identifier", { ['@identifier'] = "%"..identifier.."%" })
     return Chars
 end
 
 function GetLastCharacter(source)
-    local LastChar = MySQLAsyncExecute("SELECT `charid` FROM `user_lastcharacter` WHERE `steamid` = '"..GetPlayerIdentifiers(source)[1].."'")
+    local LastChar = MySQLAsyncExecute("SELECT `charid` FROM `user_lastcharacter` WHERE `steamid` = @steamid", { ['@steamid'] = GetPlayerIdentifiers(source)[1] })
     if LastChar[1] ~= nil and LastChar[1].charid ~= nil then
         return tonumber(LastChar[1].charid)
     else
-        MySQLAsyncExecute("INSERT INTO `user_lastcharacter` (`steamid`, `charid`) VALUES('"..GetPlayerIdentifiers(source)[1].."', 1)")
+        MySQLAsyncExecute("INSERT INTO `user_lastcharacter` (`steamid`, `charid`) VALUES(@steamid, 1)", { ['@steamid'] = GetPlayerIdentifiers(source)[1] })
         return 1
     end
 end
 
 function SetLastCharacter(source, charid)
-    MySQLAsyncExecute("UPDATE `user_lastcharacter` SET `charid` = '"..charid.."' WHERE `steamid` = '"..GetPlayerIdentifiers(source)[1].."'")
+    MySQLAsyncExecute("UPDATE `user_lastcharacter` SET `charid` = '"..charid.."' WHERE `steamid` = @steamid", { ['@steamid'] = GetPlayerIdentifiers(source)[1] })
 end
 
 function SetIdentifierToChar(identifier, charid)
     for _, itable in pairs(IdentifierTables) do
-        MySQLAsyncExecute("UPDATE `"..itable.table.."` SET `"..itable.column.."` = 'Char"..charid..GetIdentifierWithoutSteam(identifier).."' WHERE `"..itable.column.."` = '"..identifier.."'")
+        MySQLAsyncExecute("UPDATE `"..itable.table.."` SET `"..itable.column.."` = @char WHERE `"..itable.column.."` = @identifier", { ['@char'] = "Char"..charid..GetIdentifierWithoutSteam(identifier), ['@identifier'] = identifier })
     end
 end
 
 function SetCharToIdentifier(identifier, charid)
     for _, itable in pairs(IdentifierTables) do
-        MySQLAsyncExecute("UPDATE `"..itable.table.."` SET `"..itable.column.."` = '"..identifier.."' WHERE `"..itable.column.."` = 'Char"..charid..GetIdentifierWithoutSteam(identifier).."'")
+        MySQLAsyncExecute("UPDATE `"..itable.table.."` SET `"..itable.column.."` = @identifier WHERE `"..itable.column.."` = @char", { ['@char'] = "Char"..charid..GetIdentifierWithoutSteam(identifier), ['@identifier'] = identifier })
     end
 end
 
 function DeleteCharacter(identifier, charid)
     for _, itable in pairs(IdentifierTables) do
-        MySQLAsyncExecute("DELETE FROM `"..itable.table.."` WHERE `"..itable.column.."` = 'Char"..charid..GetIdentifierWithoutSteam(identifier).."'")
+        MySQLAsyncExecute("DELETE FROM `"..itable.table.."` WHERE `"..itable.column.."` = @char", { ['@char'] = "Char"..charid..GetIdentifierWithoutSteam(identifier) })
     end
 end
 
 function GetSpawnPos(source)
-    local SpawnPos = MySQLAsyncExecute("SELECT `position` FROM `users` WHERE `identifier` = '"..GetPlayerIdentifiers(source)[1].."'")
+    local SpawnPos = MySQLAsyncExecute("SELECT `position` FROM `users` WHERE `identifier` = @identifier", { ['@identifier'] = GetPlayerIdentifiers(source)[1] })
     return json.decode(SpawnPos[1].position)
 end
 
@@ -86,10 +86,10 @@ function GetIdentifierWithoutSteam(Identifier)
     return string.gsub(Identifier, "steam", "")
 end
 
-function MySQLAsyncExecute(query)
+function MySQLAsyncExecute(query, params)
     local IsBusy = true
     local result = nil
-    MySQL.Async.fetchAll(query, {}, function(data)
+    MySQL.Async.fetchAll(query, params, function(data)
         result = data
         IsBusy = false
     end)
